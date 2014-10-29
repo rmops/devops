@@ -1,0 +1,17 @@
+description "Start the resque-worker processes"
+
+# The number of resque workers to start
+env NUM_WORKERS=<%= rails_env == 'prod' ? 3 : 1 %>
+
+
+pre-start script
+    for w in `seq 1 $NUM_WORKERS`; do
+      start resque-worker WORKER_ID=$w
+    done
+end script
+
+post-stop script
+  for i in `initctl list | grep '^resque-worker ' | awk '{print $2}' | tr -d '()'`; do
+     stop resque-worker WORKER_ID=$i
+  done
+end script

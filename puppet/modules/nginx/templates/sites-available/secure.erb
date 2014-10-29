@@ -1,0 +1,87 @@
+upstream unicorn_<%= name %>_secure {
+  server unix:/mnt/<%= name %>/shared/sockets/unicorn.sock fail_timeout=0;
+}
+
+# Preserve X-Forwarded-Proto if it exists, use current scheme otherwise.
+map $http_x_forwarded_proto $fwd_proto {
+  default $http_x_forwarded_proto;
+  '' $scheme;
+}
+
+
+
+server {
+  listen 443 ;
+  server_name www.nicerelease.com;
+  client_max_body_size 4G;
+
+  ssl on;
+  ssl_certificate         /etc/nginx/<%= name %>.crt;
+  ssl_certificate_key     /etc/nginx/<%= name %>.key;
+  ssl_crl /etc/nginx/<%= name %>.client.ca.crl;
+  ssl_client_certificate /etc/nginx/<%= name %>.client.ca.crt;
+  ssl_verify_client on;
+  ssl_verify_depth 10;
+  ssl_session_timeout 5m;
+  root /mnt/<%= name %>/current/public;
+
+ location = / {
+    return 301 https://admin.nicerelease.com/shop/admin;
+}
+
+ proxy_set_header X-Forwarded-Proto $fwd_proto;
+    # X-Url-Scheme is probably not necessary, but probably does not hurt
+    proxy_set_header X-Url-Scheme $fwd_proto;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Host $http_host;
+    proxy_max_temp_file_size 0;
+    proxy_redirect off;
+  location / {
+
+  try_files $uri @app;
+
+           }
+
+ location @app {
+    proxy_pass http://unicorn_<%= name %>_secure;
+}
+
+
+  location ~* ^/assets {
+    expires max;
+    add_header Cache-Control public;
+    break;
+  }
+
+  error_page 500 502 503 504 /500.html;
+  location = /500.html {
+    root /mnt/<%= name %>/current/public;
+  }
+}
+
+
+
+
+server {
+  listen 443 default ;
+  server_name -;
+  client_max_body_size 4G;
+ ssl on;
+  ssl_certificate         /etc/nginx/<%= name %>.crt;
+  ssl_certificate_key     /etc/nginx/<%= name %>.key;
+  ssl_protocols SSLv3 TLSv1;
+  ssl_ciphers RC4:HIGH:!aNULL:!MD5;
+  ssl_prefer_server_ciphers on;
+
+  ssl_session_timeout 5m;
+  root /etc/nginx/html;
+   error_page 500 502 503 504 404 403 /403.html;
+ location = /403.html {
+          allow all;
+      }
+location / {
+
+  return 403;
+            }
+}
+

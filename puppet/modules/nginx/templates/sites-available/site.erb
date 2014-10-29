@@ -1,0 +1,220 @@
+<%
+  def prod?
+    @ec2tag_env == 'prod'
+  end
+
+  def  qa?
+    @ec2tag_env[0..1] == 'qa'
+  end
+
+  def test?
+    @ec2tag_env == 'test'
+  end
+	
+      application_endpoint= case 
+      when prod? then 'www.nicerelease.com'
+      when test? then 'www-test.nicerelease.com'
+      when qa? then 'www-' + @ec2tag_env + '.nicerelease.com'
+      end
+
+      admin_endpoint= case 
+      when prod? then 'admin.nicerelease.com'
+      when test? then 'test.nicerelease.com'
+      when qa? then 'admin-' + @ec2tag_env + '.nicerelease.com'
+      end
+
+
+%>
+     deploy_path = '/mnt/<%= name %>'
+
+
+
+upstream unicorn_<%= name %> {
+  server unix:/mnt/<%= name %>/shared/sockets/unicorn.sock fail_timeout=0;
+}
+
+
+
+server {
+	listen 80;
+	client_max_body_size 4G;
+	server_name <%= application_endpoint %> ;
+	keepalive_timeout 5;
+
+	#pagespeed section
+        pagespeed on;
+        pagespeed RespectXForwardedProto on;
+        # needs to exist and be writable by nginx
+
+        # needs to exist and be writable by nginx
+        pagespeed StatisticsPath /ngx_pagespeed_statistics;
+        pagespeed MessagesPath /ngx_pagespeed_message;
+        pagespeed ConsolePath /pagespeed_console;
+        pagespeed AdminPath /pagespeed_admin;
+        #  Ensure requests for pagespeed optimized resources go to the pagespeed
+      
+        location /ngx_pagespeed_global_statistics { auth_basic   "Restricted";  auth_basic_user_file  /etc/nginx/authfile; }
+        location ~ ^/pagespeed_admin { auth_basic   "Restricted";  auth_basic_user_file  /etc/nginx/authfile; }
+        location ~ ^/pagespeed_global_admin { auth_basic   "Restricted";  auth_basic_user_file  /etc/nginx/authfile; }
+
+        location /ngx_pagespeed_statistics { auth_basic   "Restricted";  auth_basic_user_file  /etc/nginx/authfile; }
+
+        location /ngx_pagespeed_message { auth_basic   "Restricted";  auth_basic_user_file  /etc/nginx/authfile; }
+        location /pagespeed_console { auth_basic   "Restricted";  auth_basic_user_file  /etc/nginx/authfile; }
+        pagespeed RewriteLevel PassThrough;
+        pagespeed EnableFilters rewrite_images,insert_image_dimensions,rewrite_css,rewrite_javascript,extend_cache;
+
+        pagespeed FileCacheSizeKb            102400;
+        pagespeed FileCacheCleanIntervalMs   3600000;
+        pagespeed FileCacheInodeLimit        500000;
+        pagespeed LRUCacheKbPerProcess     8192;
+        pagespeed LRUCacheByteLimit        16384;
+        pagespeed MessageBufferSize 100000;
+        pagespeed Statistics on;
+        pagespeed StatisticsLogging on;
+        pagespeed LogDir /mnt/log/pagespeed;
+        pagespeed StatisticsLoggingIntervalMs 60000;
+        pagespeed StatisticsLoggingMaxFileSizeKb 1024;
+
+
+        #handler and no extraneous headers get set.
+        location ~ "\.pagespeed\.([a-z]\.)?[a-z]{2}\.[^.]{10}\.[^.]+" { add_header "" ""; }
+        location ~ "^/ngx_pagespeed_static/" { }
+        location ~ "^/ngx_pagespeed_beacon$" { }
+        pagespeed BeaconUrl "/shop/beacon";
+
+	pagespeed Domain https://<%= application_endpoint %>;
+	pagespeed Domain https://<%= cdn_endpoint %>;
+
+
+	root /mnt/<%= name %>/current/public;
+
+	proxy_set_header X-Forwarded-Proto $http_x_forwarded_proto;
+	proxy_set_header X-Url-Scheme $http_x_forwarded_proto;
+	proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+	proxy_set_header Host $http_host;
+	proxy_max_temp_file_size 0;
+	proxy_redirect off;
+
+
+
+	location ~ /shop/|/shop{
+	    proxy_pass http://unicorn_puma$request_uri;
+		}
+
+	location ~* ^/ecommerce/{
+	  root /mnt/<%= name %>/current/public;
+         
+          add_header Access-Control-Allow-Origin http://<%= application_endpoint %>;
+          if ($http_x_forwarded_proto = "https") {
+             add_header Access-Control-Allow-Origin https://<%= application_endpoint %>;
+          }
+	  expires  6h;
+	}
+
+
+	location =/ {
+	if ($http_x_forwarded_proto = "https" ) {
+	    return 301  http://<%= application_endpoint %>;
+	      }
+
+	  proxy_pass http://unicorn_puma/shop ;
+
+	}
+
+
+	  location = /health_check {
+            proxy_pass http://unicorn_puma/health_check;
+            }
+
+
+
+	
+	location =/admin/ {
+		  access_log /mnt/log/nginx/admin_upstream_access.log upstream_combined;
+  		  return 301 https://<%= admin_endpoint %>/shop/admin;
+  			}
+
+	location =/admin {
+		access_log /mnt/log/nginx/admin_upstream_access.log upstream_combined;
+	  	return 301 https://<%= admin_endpoint %>/shop/admin;
+	  }
+
+	location =/shop/admin {
+	    return 301 https://<%= admin_endpoint %>$request_uri;
+             access_log /mnt/log/nginx/admin_upstream_access.log upstream_combined;
+ 
+	 }
+
+	location =/shop/admin/ {
+                access_log /mnt/log/nginx/admin_upstream_access.log upstream_combined;
+
+	    return 301 https://<%= admin_endpoint %>$request_uri;
+	  }
+
+
+	location =/ecommerce/admin {
+           access_log /mnt/log/nginx/admin_upstream_access.log upstream_combined;
+
+	    return 301 https://<%= admin_endpoint %>$request_uri;
+	  }
+
+
+	location =/shop/admin/products {
+           access_log /mnt/log/nginx/admin_upstream_access.log upstream_combined;
+
+            return 301 https://<%= admin_endpoint %>$request_uri;
+          }
+
+	
+	location =/shop/admin/products/ {
+           access_log /mnt/log/nginx/admin_upstream_access.log upstream_combined;
+
+            return 301 https://<%= admin_endpoint %>$request_uri;
+          }
+
+
+	location / {
+                access_log /mnt/log/nginx/community_upstream_access.log upstream_combined;
+
+		   proxy_pass https://<%= backend_endpoint %>;
+		 }
+
+
+
+
+	 location @app {
+	    proxy_pass http://unicorn_puma;
+	}
+
+
+
+
+	  error_page 500 502 503 504 /500.html;
+	  location = /500.html {
+	    root /mnt/<%= name %>/current/public;
+	  }
+	}
+
+
+
+
+
+
+
+
+	server {
+	  listen 80 default ;
+	  server_name -;
+	  client_max_body_size 4G;
+	  root /etc/nginx/html;
+	   error_page 500 502 503 504 404 403 /403.html;
+	 location = /403.html {
+		  allow all;
+	      }
+	location / {
+
+	  return 403;
+		    }
+	}
+

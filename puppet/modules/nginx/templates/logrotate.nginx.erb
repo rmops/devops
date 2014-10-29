@@ -1,0 +1,14 @@
+/mnt/log/nginx/*.log {
+            size 500M
+            maxage 30
+            missingok
+            rotate 52
+            compress
+            delaycompress
+            notifempty
+            create 640 root adm
+            sharedscripts
+            postrotate
+                [ ! -f /var/run/nginx.pid ] || kill -USR1 `cat /var/run/nginx.pid`
+            endscript
+        }

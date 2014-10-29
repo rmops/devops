@@ -1,0 +1,18 @@
+---
+classes:
+  common: ''
+  appserver: ''
+  dbserver: ''
+  app: ''
+parameters:
+  rails_env: production
+  ruby_version: 1.9.3-p125
+  unicorn_workers: 3
+  server_ip: qa2.nicerelease.com
+  app_server_ips:
+  - qa2.nicerelease.com
+  loadbalancer: false
+  db_server: 127.0.0.1
+  app_name: spree
+  mysql_password: spree123
+  mysql_user: spree

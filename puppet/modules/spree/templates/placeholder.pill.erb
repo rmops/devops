@@ -1,0 +1,6 @@
+Bluepill.application("<%= name %>", :foreground => false, :log_file => "/mnt/<%= name %>/shared/log/bluepill.log") do |app|
+  app.uid = "spree"
+  app.gid = "spree"
+  app.working_dir = "/mnt/<%= name %>/current/"
+
+end

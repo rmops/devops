@@ -1,0 +1,6 @@
+i-1af7812b	environment	test
+i-1377e120	environment	prod
+i-a66e8092	Name	prod-openvpn
+i-1177e120	Name	prod-mongo
+i-7a44f14e	environment	prod
+i-617cf254	environment	test

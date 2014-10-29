@@ -1,0 +1,20 @@
+console log
+
+respawn
+respawn limit 5 600
+
+setuid spree
+
+chdir /mnt/<%= app_name %>/current
+
+env HOSTBASE=<%= hostbase %>
+export HOSTBASE
+
+env RAILS_ENV=<%= rails_env == 'test' ? 'test' : rails_env[0..1] == 'qa' ? 'qa' : 'production' %>
+env QUEUE=*
+
+#  instance WORKER_ID tells upstart to start multiple instances of this 
+instance $WORKER_ID
+
+exec bundle exec env WORKER_ID=$WORKER_ID rake environment resque:work
+

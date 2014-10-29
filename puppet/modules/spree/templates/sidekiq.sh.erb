@@ -1,0 +1,3 @@
+if [ -d /mnt/<%= name %>/current ] && [ -f /mnt/<%= name %>/current/tmp/pids/sidekiq.pid ] && kill -0 `cat /mnt/<%= name %>/current/tmp/pids/sidekiq.pid`> /dev/null 2>&1; then cd /mnt/<%= name %>/current && bundle exec sidekiqctl stop /mnt/<%= name %>/current/tmp/pids/sidekiq.pid 10 ; else echo 'Sidekiq is not running'; fi
+sleep 1
+cd /mnt/<%= name %>/current ; nohup bundle exec sidekiq -e qa -C /mnt/<%= name %>/current/config/sidekiq.yml -i 0 -P /mnt/<%= name %>/current/tmp/pids/sidekiq.pid >> /mnt/<%= name %>/current/log/sidekiq.log 2>&1 &

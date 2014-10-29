@@ -1,0 +1,15 @@
+exec node app.js 
+  --host "0.0.0.0" \
+  --port "3002" \
+
+console log
+
+respawn
+respawn limit 10 5 
+
+setuid spree
+
+chdir /mnt/feed/current
+
+exec node app.js<%= @argstring %>
+

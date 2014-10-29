@@ -1,0 +1,39 @@
+#       associated with)
+#  $2 = svc_description (Description of the service)
+#  $3 = return_code (An integer that determines the state
+#       of the service check, 0=OK, 1=WARNING, 2=CRITICAL,
+#       3=UNKNOWN).
+#  $4 = plugin_output (A text string that should be used
+#       as the plugin output for the service check)s
+# 
+#
+# Note:
+# Modify the NagiosHost parameter to match the name or
+# IP address of the central server that has the nsca
+# daemon running.
+NagiosHost="nagios.nicerelease.com"
+return_code=-1 
+case "$3" in 
+OK) 
+return_code=0 
+;; 
+WARNING) 
+return_code=1 
+;; 
+CRITICAL) 
+return_code=2 
+;; 
+UNKNOWN) 
+return_code=-1 
+;; 
+esac 
+
+printfcmd="/usr/bin/printf"
+
+NscaBin="/usr/sbin/send_nsca" 
+NscaCfg="/etc/send_nsca.cfg"
+
+# Fire the data off to the NSCA daemon using the send_nsca script 
+$printfcmd "%s\t%s\t%s\t%s\n" "$1" "$2" $return_code "$4" | $NscaBin -H $NagiosHost -c $NscaCfg
+
+# EOF

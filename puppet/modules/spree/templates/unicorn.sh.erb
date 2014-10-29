@@ -1,0 +1,10 @@
+#me %>!/bin/bash
+if [ -e /tmp/unicorn.<%= name %>.pid ] &&  kill -0 `cat /tmp/unicorn.<%= name %>.pid` > /dev/null 2>&1; 
+then         echo \"Duplicating Unicorn...\";               kill -s USR2 `cat /tmp/unicorn.<%= name %>.pid`;
+            else                          if [ -e /mnt/<%= name %>/current/config/unicorn.rb ];
+ then              UNICORN_CONFIG_PATH=/mnt/<%= name %>/current/config/unicorn.rb;            
+else              if [ -e /mnt/<%= name %>/current/config/unicorn/qa.rb ]; then                UNICORN_CONFIG_PATH=/mnt/<%= name %>/current/config/unicorn/qa.rb;             else                echo \"Config file for \"qa\" environment was not found at either \"/mnt/<%= name %>/current/config/unicorn.rb\" or \"/mnt/<%= name %>/current/config/unicorn/qa.rb\"\";                exit 1;              fi;            fi;            if [ -e /tmp/unicorn.<%= name %>.pid ]; then              if  kill -0 `cat /tmp/unicorn.<%= name %>.pid` > /dev/null 2>&1; then               echo \"Unicorn is already running!\";                exit 0;              fi;               rm /tmp/unicorn.<%= name %>.pid;            fi;            echo \"Starting Unicorn...\";            
+cd /mnt/<%= name %>/current &&  
+BUNDLE_GEMFILE=/mnt/<%= name %>/current/Gemfile bundle exec /usr/local/bin/unicorn_rails -c $UNICORN_CONFIG_PATH -E production -D; 
+           fi; 
+             sleep 2; # in order to wait for the (old) pidfile to show up\\\n\\\n              if [ -e /tmp/unicorn.<%= name %>.pid.oldbin ] &&  kill -0 `cat /tmp/unicorn.<%= name %>.pid.oldbin` > /dev/null 2>&1; then\\\n                 kill -s QUIT `cat /tmp/unicorn.<%= name %>.pid.oldbin`;\\\n              fi;

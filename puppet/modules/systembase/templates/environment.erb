@@ -1,0 +1,8 @@
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games"
+<% if (['spree-01']).include? @hostname then -%>
+export HOSTBASE=qa2
+<% elsif (['qa1']).include? @hostname then -%>
+export HOSTBASE=qa1
+<% elsif (['qa2']).include? @ec2tag_name then -%>
+export HOSTBASE=<%= @ec2tag_env %>
+<% end -%>
