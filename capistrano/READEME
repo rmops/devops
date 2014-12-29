@@ -1,5 +1,5 @@
 add capstranio support to use : cap qa1 deploy -s branch=master
-dev for www-dev.stylesaint.com
+dev for www-dev.nicerelease.com
 qa1 for puma-qa1
 sf01/sf02 for puma-qa2
 admin for puma-admin
